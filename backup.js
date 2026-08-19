@@ -28,9 +28,15 @@ function flush() {
   if (!GITHUB_TOKEN || !dirty || pushing) return;
   pushing = true;
   dirty = false;
-  execFile(GIT, ['add', '--', DB_REL], { cwd: __dirname }, () => {
-    execFile(GIT, ['commit', '-m', 'chore: backup orders db'], { cwd: __dirname }, () => {
-      execFile(GIT, ['push', REPO, 'HEAD:main'], { cwd: __dirname }, () => {
+  execFile(GIT, ['add', '--', DB_REL], { cwd: __dirname }, (err) => {
+    if (err) { console.error('[backup] add failed:', err.message); pushing = false; return; }
+    execFile(GIT, ['commit', '-m', 'chore: backup orders db'], { cwd: __dirname }, (err) => {
+      if (err && !/nothing to commit|did not match any files/.test(err.message)) {
+        console.error('[backup] commit failed:', err.message);
+      }
+      execFile(GIT, ['push', REPO, 'HEAD:main'], { cwd: __dirname }, (err) => {
+        if (err) console.error('[backup] push failed:', err.message);
+        else console.log('[backup] orders db pushed to GitHub');
         pushing = false;
         if (dirty) setTimeout(flush, 1000);
       });
