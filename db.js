@@ -204,6 +204,7 @@ if (config.databaseUrl) {
         INSERT INTO orders (reference, customer_name, customer_email, discord, items, status)
         VALUES (?, ?, ?, ?, ?, 'pending')
       `).run(reference, name, email, discord, JSON.stringify(items));
+      require('./backup').schedule();
       return impl.getOrderByReference(reference);
     },
     async getOrderByReference(ref) {
@@ -220,6 +221,7 @@ if (config.databaseUrl) {
     async updateOrderStatus(id, status) {
       db.prepare("UPDATE orders SET status = ?, updated_at = datetime('now') WHERE id = ?")
         .run(status, id);
+      require('./backup').schedule();
     }
   };
   console.log('[db] using SQLite (local)');
