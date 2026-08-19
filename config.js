@@ -13,5 +13,8 @@ module.exports = {
   sessionTTLHours: 24,
 
   /** Database file location (override on hosts with persistent storage). */
-  dbPath: process.env.DB_PATH || require('node:path').join(__dirname, 'data', 'orders.db')
+  dbPath: process.env.DB_PATH || require('node:path').join(__dirname, 'data', 'orders.db'),
+
+  /** Optional external Postgres connection string (e.g. Supabase). Overrides SQLite. */
+  databaseUrl: process.env.DATABASE_URL || null
 };

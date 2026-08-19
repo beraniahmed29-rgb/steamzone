@@ -5,6 +5,9 @@ const db = require('../db');
 
 const router = express.Router();
 
+/* tiny async wrapper so Express 4 forwards rejections to the error handler */
+const ah = fn => (req, res, next) => fn(req, res, next).catch(next);
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DISCORD_RE = /^[A-Za-z0-9_.#-]{2,64}$/;
 
@@ -13,7 +16,7 @@ function fail(res, status, message) {
 }
 
 /* POST /api/orders — submit a purchase request (contact via Discord) */
-router.post('/', (req, res) => {
+router.post('/', ah(async (req, res) => {
   const { name, email, discord, items } = req.body || {};
 
   if (!name || String(name).trim().length < 2) return fail(res, 400, 'يرجى إدخال اسم صحيح');
@@ -27,7 +30,7 @@ router.post('/', (req, res) => {
     }
   }
 
-  const order = db.createOrder({
+  const order = await db.createOrder({
     name: String(name).trim(),
     email: String(email).trim(),
     discord: String(discord).trim(),
@@ -39,11 +42,11 @@ router.post('/', (req, res) => {
     status: order.status,
     message: 'تم استلام طلبك — سنتواصل معك على Discord لتأكيد الدفع والتسليم'
   });
-});
+}));
 
 /* GET /api/orders/:reference — public order status lookup */
-router.get('/:reference', (req, res) => {
-  const order = db.getOrderByReference(String(req.params.reference).toUpperCase().trim());
+router.get('/:reference', ah(async (req, res) => {
+  const order = await db.getOrderByReference(String(req.params.reference).toUpperCase().trim());
   if (!order) return fail(res, 404, 'لم يتم العثور على الطلب');
   res.json({
     reference: order.reference,
@@ -51,6 +54,6 @@ router.get('/:reference', (req, res) => {
     createdAt: order.createdAt,
     updatedAt: order.updatedAt
   });
-});
+}));
 
 module.exports = router;

@@ -7,6 +7,9 @@ const config = require('../config');
 
 const router = express.Router();
 
+/* tiny async wrapper so Express 4 forwards rejections to the error handler */
+const ah = fn => (req, res, next) => fn(req, res, next).catch(next);
+
 /* simple in-memory brute-force protection */
 const loginAttempts = new Map();
 const MAX_ATTEMPTS = 5;
@@ -28,14 +31,14 @@ function bumpRateLimit(ip) {
 }
 
 /* POST /api/admin/login */
-router.post('/login', (req, res) => {
+router.post('/login', ah(async (req, res) => {
   const ip = req.ip || 'unknown';
   if (!checkRateLimit(ip)) {
     return res.status(429).json({ error: 'محاولات كثيرة — انتظر 10 دقائق' });
   }
 
   const { username, password } = req.body || {};
-  const admin = db.db.prepare('SELECT * FROM admins WHERE username = ?').get(String(username || '').trim());
+  const admin = await db.findAdmin(String(username || '').trim());
   if (!admin || !db.verifyPassword(String(password || ''), admin.salt, admin.password_hash)) {
     bumpRateLimit(ip);
     return res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
@@ -49,7 +52,7 @@ router.post('/login', (req, res) => {
     maxAge: config.sessionTTLHours * 3600 * 1000
   });
   res.json({ ok: true, username: admin.username });
-});
+}));
 
 /* POST /api/admin/logout */
 router.post('/logout', auth.requireAuth, (req, res) => {
@@ -59,9 +62,9 @@ router.post('/logout', auth.requireAuth, (req, res) => {
 });
 
 /* GET /api/admin/orders — list all orders (protected) */
-router.get('/orders', auth.requireAuth, (req, res) => {
+router.get('/orders', auth.requireAuth, ah(async (req, res) => {
   const { status, q } = req.query;
-  let orders = db.getAllOrders();
+  let orders = await db.getAllOrders();
   if (status && status !== 'all') orders = orders.filter(o => o.status === status);
   if (q) {
     const needle = String(q).toLowerCase();
@@ -73,11 +76,11 @@ router.get('/orders', auth.requireAuth, (req, res) => {
     );
   }
   res.json(orders);
-});
+}));
 
 /* GET /api/admin/orders/stats (protected) */
-router.get('/stats', auth.requireAuth, (req, res) => {
-  const all = db.getAllOrders();
+router.get('/stats', auth.requireAuth, ah(async (req, res) => {
+  const all = await db.getAllOrders();
   res.json({
     total: all.length,
     pending: all.filter(o => o.status === 'pending').length,
@@ -85,33 +88,33 @@ router.get('/stats', auth.requireAuth, (req, res) => {
     completed: all.filter(o => o.status === 'completed').length,
     cancelled: all.filter(o => o.status === 'cancelled').length
   });
-});
+}));
 
 /* POST /api/admin/orders/:id/contacted — admin contacted the customer on Discord */
-router.post('/orders/:id/contacted', auth.requireAuth, (req, res) => {
+router.post('/orders/:id/contacted', auth.requireAuth, ah(async (req, res) => {
   const id = Number(req.params.id);
-  const order = db.db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+  const order = await db.getOrderById(id);
   if (!order) return res.status(404).json({ error: 'الطلب غير موجود' });
-  db.updateOrderStatus(id, 'contacted');
+  await db.updateOrderStatus(id, 'contacted');
   res.json({ ok: true, status: 'contacted' });
-});
+}));
 
 /* POST /api/admin/orders/:id/complete — deal finished */
-router.post('/orders/:id/complete', auth.requireAuth, (req, res) => {
+router.post('/orders/:id/complete', auth.requireAuth, ah(async (req, res) => {
   const id = Number(req.params.id);
-  const order = db.db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+  const order = await db.getOrderById(id);
   if (!order) return res.status(404).json({ error: 'الطلب غير موجود' });
-  db.updateOrderStatus(id, 'completed');
+  await db.updateOrderStatus(id, 'completed');
   res.json({ ok: true, status: 'completed' });
-});
+}));
 
 /* POST /api/admin/orders/:id/cancel */
-router.post('/orders/:id/cancel', auth.requireAuth, (req, res) => {
+router.post('/orders/:id/cancel', auth.requireAuth, ah(async (req, res) => {
   const id = Number(req.params.id);
-  const order = db.db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+  const order = await db.getOrderById(id);
   if (!order) return res.status(404).json({ error: 'الطلب غير موجود' });
-  db.updateOrderStatus(id, 'cancelled');
+  await db.updateOrderStatus(id, 'cancelled');
   res.json({ ok: true, status: 'cancelled' });
-});
+}));
 
 module.exports = router;

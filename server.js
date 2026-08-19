@@ -29,7 +29,10 @@ app.use((req, res, next) => {
   next();
 });
 
-db.seedAdmin();
+db.init().catch(err => {
+  console.error('[db] init failed:', err.message);
+  process.exit(1);
+});
 
 /* API routes (must be registered before static to shadow nothing important) */
 app.use('/api/orders', require('./routes/orders'));
