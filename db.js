@@ -1,8 +1,12 @@
 'use strict';
 
 const { DatabaseSync } = require('node:sqlite');
+const fs = require('node:fs');
+const path = require('node:path');
 const crypto = require('node:crypto');
 const config = require('./config');
+
+fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
 
 const db = new DatabaseSync(config.dbPath);
 
