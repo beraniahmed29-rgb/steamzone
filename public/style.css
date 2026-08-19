@@ -441,11 +441,15 @@ body {
 }
 @media (max-width: 768px) {
   .nav {
-    position: static; flex-direction: row; gap: 16px;
-    background: none; padding: 0; border: none; transform: none;
+    position: fixed; top: 0; right: 0; left: 0; z-index: 200;
+    background: rgba(10, 10, 20, 0.97); flex-direction: column; gap: 0;
+    padding: calc(72px + env(safe-area-inset-top)) 24px 10px;
+    border-bottom: 1px solid var(--border);
+    transform: translateY(-100%); transition: 0.4s;
   }
-  .nav a { padding: 0; border: none; }
-  .menu-btn { display: none; }
+  .nav.open { transform: translateY(0); }
+  .nav a { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .menu-btn { display: block; }
 .accounts-grid { grid-template-columns: 1fr; }
   .info-grid { grid-template-columns: 1fr; }
   .footer-inner { grid-template-columns: 1fr 1fr; }
