@@ -53,6 +53,7 @@ body {
 .logo-text span { color: var(--primary-2); }
 
 .nav { display: flex; gap: 28px; }
+.nav-close { display: none; }
 .nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 15px; transition: 0.3s; position: relative; }
 .nav a:hover { color: var(--text); }
 .nav a::after {
@@ -443,12 +444,14 @@ body {
   .nav {
     position: fixed; top: 0; right: 0; left: 0; z-index: 200;
     background: rgba(10, 10, 20, 0.97); flex-direction: column; gap: 0;
-    padding: calc(72px + env(safe-area-inset-top)) 24px 10px;
+    padding: calc(10px + env(safe-area-inset-top)) 24px;
     border-bottom: 1px solid var(--border);
     transform: translateY(-100%); transition: 0.4s;
   }
   .nav.open { transform: translateY(0); }
   .nav a { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .nav-close { display: block; align-self: flex-end; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 6px; }
+  .nav-close:hover { color: var(--danger); }
   .menu-btn { display: block; }
 .accounts-grid { grid-template-columns: 1fr; }
   .info-grid { grid-template-columns: 1fr; }

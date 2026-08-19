@@ -220,6 +220,10 @@ function toggleMenu() {
   document.getElementById('nav').classList.toggle('open');
 }
 
+function closeMenu() {
+  document.getElementById('nav').classList.remove('open');
+}
+
 const canvas = document.getElementById('bg-canvas');
 const ctx = canvas.getContext('2d');
 let particles = [];
