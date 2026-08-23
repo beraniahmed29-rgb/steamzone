@@ -701,6 +701,27 @@ body::after {
   50% { transform: translateY(-14px) rotate(6deg); }
 }
 
+/* ===== Ad Containers ===== */
+.ad-container {
+  margin: 24px 0;
+  min-height: 90px;
+  background: transparent;
+  overflow: hidden;
+}
+.ad-container ins { width: 100%; height: auto; }
+.ad-top { margin: 32px 0; }
+.ad-bottom { margin: 40px 0 24px; }
+.ad-product { margin: 24px 0 16px; }
+.ad-admin { margin: 16px 0 24px; }
+
+@media (max-width: 768px) {
+  .ad-container { min-height: 80px; margin: 16px 0; }
+  .ad-top { margin: 24px 0; }
+  .ad-bottom { margin: 24px 0 16px; }
+  .ad-product { margin: 16px 0; }
+  .ad-admin { margin: 12px 0 16px; }
+}
+
 /* Reduced motion: calm everything down */
 @media (prefers-reduced-motion: reduce) {
   .cursor-orb, .orb, #scroll-progress, .fx-burst, .ripple, .spark, .shooting-star { display: none; }
