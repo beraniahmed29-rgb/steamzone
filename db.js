@@ -369,10 +369,5 @@ if (config.databaseUrl) {
 module.exports = {
   ...impl,
   verifyPassword,
-  generateReference,
-  enterDailyDraw,
-  getDailyDrawStatus,
-  pickDailyDrawWinner,
-  getTodayWinner,
-  getDrawStats
+  generateReference
 };
