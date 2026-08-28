@@ -69,27 +69,6 @@ if (config.databaseUrl) {
       password_hash TEXT NOT NULL,
       salt          TEXT NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS daily_draw_entries (
-      id SERIAL PRIMARY KEY,
-      user_name TEXT NOT NULL,
-      user_email TEXT NOT NULL,
-      user_discord TEXT NOT NULL,
-      draw_date DATE NOT NULL DEFAULT CURRENT_DATE,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      UNIQUE(user_email, draw_date)
-    );
-    CREATE INDEX IF NOT EXISTS idx_daily_draw_date ON daily_draw_entries(draw_date);
-    CREATE TABLE IF NOT EXISTS daily_draw_winners (
-      id SERIAL PRIMARY KEY,
-      draw_date DATE NOT NULL UNIQUE,
-      winner_name TEXT NOT NULL,
-      winner_email TEXT NOT NULL,
-      winner_discord TEXT NOT NULL,
-      prize TEXT,
-      claimed BOOLEAN DEFAULT FALSE,
-      claimed_at TIMESTAMPTZ,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    );
   `;
 
   async function migrateFromLegacySqlite() {
@@ -161,59 +140,6 @@ if (config.databaseUrl) {
     },
     async updateOrderStatus(id, status) {
       await pool.query('UPDATE orders SET status = $1, updated_at = now() WHERE id = $2', [status, id]);
-    },
-    async enterDailyDraw({ name, email, discord }) {
-      const today = new Date().toISOString().split('T')[0];
-      const r = await pool.query(
-        `INSERT INTO daily_draw_entries (user_name, user_email, user_discord, draw_date)
-         VALUES ($1,$2,$3,$4)
-         ON CONFLICT (user_email, draw_date) DO NOTHING
-         RETURNING id`,
-        [name, email, discord, today]
-      );
-      return { success: r.rowCount > 0 };
-    },
-    async getDailyDrawStatus(email) {
-      if (!email) return { entered: false };
-      const today = new Date().toISOString().split('T')[0];
-      const r = await pool.query(
-        `SELECT 1 FROM daily_draw_entries WHERE user_email = $1 AND draw_date = $2`,
-        [email, today]
-      );
-      return { entered: r.rows.length > 0 };
-    },
-    async pickDailyDrawWinner() {
-      const today = new Date().toISOString().split('T')[0];
-      const entries = await pool.query(`SELECT * FROM daily_draw_entries WHERE draw_date = $1`, [today]);
-      if (!entries.rows.length) return null;
-      const winner = entries.rows[Math.floor(Math.random() * entries.rows.length)];
-      await pool.query(
-        `INSERT INTO daily_draw_winners (draw_date, winner_name, winner_email, winner_discord, prize)
-         VALUES ($1,$2,$3,$4,$5)
-         ON CONFLICT (draw_date) DO UPDATE SET
-           winner_name = EXCLUDED.winner_name,
-           winner_email = EXCLUDED.winner_email,
-           winner_discord = EXCLUDED.winner_discord,
-           prize = EXCLUDED.prize`,
-        [today, winner.user_name, winner.user_email, winner.user_discord, 'Steam Game / Account']
-      );
-      return winner;
-    },
-    async getTodayWinner() {
-      const today = new Date().toISOString().split('T')[0];
-      const r = await pool.query('SELECT * FROM daily_draw_winners WHERE draw_date = $1', [today]);
-      return r.rows[0] || null;
-    },
-    async getDrawStats() {
-      const today = new Date().toISOString().split('T')[0];
-      const [entriesCount, winnersCount] = await Promise.all([
-        pool.query('SELECT COUNT(*) FROM daily_draw_entries WHERE draw_date = $1', [today]),
-        pool.query('SELECT COUNT(*) FROM daily_draw_winners')
-      ]);
-      return {
-        todayEntries: parseInt(entriesCount.rows[0].count),
-        totalWinners: parseInt(winnersCount.rows[0].count)
-      };
     }
   };
   console.log('[db] using PostgreSQL (external, persistent)');
@@ -253,29 +179,6 @@ if (config.databaseUrl) {
       username      TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       salt          TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS daily_draw_entries (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_name     TEXT NOT NULL,
-      user_email    TEXT NOT NULL,
-      user_discord  TEXT NOT NULL,
-      draw_date     TEXT NOT NULL DEFAULT (date('now')),
-      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-      UNIQUE(user_email, draw_date)
-    );
-    CREATE INDEX IF NOT EXISTS idx_daily_draw_date ON daily_draw_entries(draw_date);
-
-    CREATE TABLE IF NOT EXISTS daily_draw_winners (
-      id            INTEGER PRIMARY KEY AUTOINCREMENT,
-      draw_date     TEXT NOT NULL UNIQUE,
-      winner_name   TEXT NOT NULL,
-      winner_email  TEXT NOT NULL,
-      winner_discord TEXT NOT NULL,
-      prize         TEXT,
-      claimed       INTEGER NOT NULL DEFAULT 0,
-      claimed_at    TEXT,
-      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
 
