@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a14">
+  <title>السحب اليومي - SteamZone</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="icon" type="image/svg+xml" href="favicon2.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="daily-draw.css">
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <header class="header">
+    <div class="container header-inner">
+      <a href="/" class="logo">
+        <span class="logo-icon"><i class="fa-brands fa-steam"></i></span>
+        <span class="logo-text">Steam<span>Zone</span></span>
+      </a>
+      <nav class="nav" id="nav">
+        <button class="nav-close" onclick="closeMenu()" aria-label="إغلاق"><i class="fa-solid fa-xmark"></i></button>
+        <a href="/" onclick="closeMenu()">الرئيسية</a>
+        <a href="#accounts" onclick="closeMenu()">الحسابات</a>
+        <a href="/daily-draw.html" onclick="closeMenu()" class="active">السحب اليومي</a>
+      </nav>
+      <div class="header-actions">
+        <button class="cart-btn" onclick="toggleCart()">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span class="cart-badge" id="cart-count">0</span>
+        </button>
+        <button class="menu-btn" id="menu-btn" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container daily-draw-page">
+    <section class="draw-hero">
+      <div class="draw-badge"><i class="fa-solid fa-gift"></i> السحب اليومي المجاني</div>
+      <h1 class="draw-title">اربح <span class="gradient-text">حساب Steam</span> يومياً</h1>
+      <p class="draw-sub">سجل مشاركتك المجانية الآن، و كل يوم يتم اختيار فائز عشوائياً يحصل على لعبة أو حساب Steam مميز.</p>
+      
+      <div class="draw-timer" id="draw-timer">
+        <div class="timer-item">
+          <span class="timer-value" id="timer-hours">00</span>
+          <span class="timer-label">ساعات</span>
+        </div>
+        <div class="timer-sep">:</div>
+        <div class="timer-item">
+          <span class="timer-value" id="timer-minutes">00</span>
+          <span class="timer-label">دقائق</span>
+        </div>
+        <div class="timer-sep">:</div>
+        <div class="timer-item">
+          <span class="timer-value" id="timer-seconds">00</span>
+          <span class="timer-label">ثواني</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="draw-stats">
+      <div class="stat-card">
+        <i class="fa-solid fa-users"></i>
+        <div class="stat-info">
+          <strong id="stat-participants">0</strong>
+          <span>مشارك اليوم</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <i class="fa-solid fa-trophy"></i>
+        <div class="stat-info">
+          <strong id="stat-winners">0</strong>
+          <span>إجمالي الفائزين</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="draw-form-section" id="draw-form-section">
+      <h2 class="section-title">سجل مشاركتك الآن</h2>
+      <form id="draw-form" class="draw-form">
+        <div class="form-group">
+          <label>الاسم الكامل</label>
+          <input type="text" id="d-name" placeholder="اسمك الكامل" required>
+        </div>
+        <div class="form-group">
+          <label>البريد الإلكتروني</label>
+          <input type="email" id="d-email" placeholder="بريدك الإلكتروني" required>
+        </div>
+        <div class="form-group">
+          <label>حساب Discord</label>
+          <div class="discord-input">
+            <i class="fa-brands fa-discord"></i>
+            <input type="text" id="d-discord" placeholder="مثال: player#1234 أو @username" required pattern="[A-Za-z0-9_.#-]{2,64}" title="أدخل اسم مستخدم Discord صحيح">
+          </div>
+        </div>
+        <label class="agree">
+          <input type="checkbox" id="d-agree" required>
+          أوافق على <a href="/terms.html" target="_blank">شروط السحب</a> و <a href="/privacy.html" target="_blank">سياسة الخصوصية</a>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="draw-submit">
+          <span class="btn-label"><i class="fa-solid fa-ticket"></i> المشاركة في السحب</span>
+          <span class="spinner" style="display:none"></span>
+        </button>
+        <p class="form-note" id="form-note"></p>
+      </form>
+    </section>
+
+    <section class="draw-winner-section" id="draw-winner-section">
+      <h2 class="section-title"><i class="fa-solid fa-crown"></i> فائز اليوم</h2>
+      <div class="winner-card" id="winner-card">
+        <div class="winner-placeholder">
+          <i class="fa-solid fa-medal"></i>
+          <p>لم يتم اختيار فائز بعد اليوم</p>
+          <span class="winner-time">يتم السحب في نهاية اليوم</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="draw-rules">
+      <h2 class="section-title"><i class="fa-solid fa-scroll"></i> قواعد السحب</h2>
+      <ul class="rules-list">
+        <li><i class="fa-solid fa-check"></i> المشاركة مجانية ومفتوحة للجميع</li>
+        <li><i class="fa-solid fa-check"></i> مشاركة واحدة فقط لكل شخص في اليوم (يتم التحقق بالبريد الإلكتروني)</li>
+        <li><i class="fa-solid fa-check"></i> يتم اختيار الفائز عشوائياً في نهاية كل يوم</li>
+        <li><i class="fa-solid fa-check"></i> الجائزة: لعبة Steam أو حساب مميز (يتم التواصل عبر Discord)</li>
+        <li><i class="fa-solid fa-check"></i> يجب أن يكون لديك حساب Discord صالح لاستلام الجائزة</li>
+        <li><i class="fa-solid fa-check"></i> الفائز لديه 48 ساعة للرد، وإلا يتم السحب على فائز بديل</li>
+        <li><i class="fa-solid fa-check"></i> SteamZone غير تابعة لـ Valve Corporation</li>
+      </ul>
+    </section>
+
+    <!-- Ad Slot -->
+    <div class="ad-container ad-draw">
+      <ins class="adsbygoogle"
+           style="display:block"
+           data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+           data-ad-slot="5555555555"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="/" class="logo">
+          <span class="logo-icon"><i class="fa-brands fa-steam"></i></span>
+          <span class="logo-text">Steam<span>Zone</span></span>
+        </a>
+        <p>متجر حسابات Steam موثوق — ألعاب أصلية بأسعار منافسة</p>
+      </div>
+      <div class="footer-links">
+        <h4>روابط سريعة</h4>
+        <ul>
+          <li><a href="/">الرئيسية</a></li>
+          <li><a href="#accounts">الحسابات</a></li>
+          <li><a href="/daily-draw.html">السحب اليومي</a></li>
+          <li><a href="/#info">طريقة الشراء</a></li>
+        </ul>
+      </div>
+      <div class="footer-social">
+        <h4>تابعنا</h4>
+        <div class="social-icons">
+          <a href="https://discord.gg/5xUnSf3fY" target="_blank" rel="noopener" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+          <a href="https://www.tiktok.com/@nexa482" target="_blank" rel="noopener" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+          <a href="https://www.youtube.com/@nexa-gam" target="_blank" rel="noopener" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+        <p class="footer-contact">Discord: <strong>nexa_gm</strong></p>
+      </div>
+    </div>
+    <div class="container footer-bottom">© 2026 SteamZone — جميع الحقوق محفوظة.</div>
+  </footer>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="daily-draw.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

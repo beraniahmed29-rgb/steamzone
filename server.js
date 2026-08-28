@@ -38,6 +38,7 @@ require('./backup').start();
 /* API routes (must be registered before static to shadow nothing important) */
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/daily-draw', require('./routes/dailyDraw'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
