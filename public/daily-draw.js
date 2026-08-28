@@ -181,8 +181,8 @@ function updateTimer() {
   timerSeconds.textContent = String(seconds).padStart(2, '0');
 }
 
-/* Initialize */
-document.addEventListener('DOMContentLoaded', () => {
+/* Initialize - runs immediately if DOM ready, otherwise waits for DOMContentLoaded */
+function init() {
   loadStats();
   loadWinner();
   updateTimer();
@@ -196,4 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (form) form.addEventListener('submit', handleSubmit);
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
