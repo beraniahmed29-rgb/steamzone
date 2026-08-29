@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const path = require('node:path');
 const express = require('express');
 const config = require('./config');
@@ -21,6 +22,26 @@ app.use((req, res, next) => {
   next();
 });
 
+/* visitor middleware: auto-create visitor account & attach to req */
+app.use(async (req, res, next) => {
+  try {
+    let visitorId = req.cookies.vid;
+    if (!visitorId) {
+      visitorId = crypto.randomUUID();
+      res.cookie('vid', visitorId, {
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 365 * 24 * 60 * 60 * 1000 // 1 year
+      });
+    }
+    const visitor = await db.getOrCreateVisitor(visitorId);
+    req.visitor = visitor;
+  } catch (e) {
+    console.error('[visitor] middleware error:', e.message);
+  }
+  next();
+});
+
 /* security headers */
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -38,6 +59,7 @@ require('./backup').start();
 /* API routes (must be registered before static to shadow nothing important) */
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/visitors', require('./routes/visitors'));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

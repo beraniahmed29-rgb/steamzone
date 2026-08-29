@@ -69,6 +69,14 @@ if (config.databaseUrl) {
       password_hash TEXT NOT NULL,
       salt          TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS visitors (
+      id            SERIAL PRIMARY KEY,
+      name          TEXT NOT NULL DEFAULT 'زائر',
+      visitor_id    TEXT UNIQUE NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at    TIMESTAMPTZ
+    );
+    CREATE INDEX IF NOT EXISTS idx_visitors_visitor_id ON visitors(visitor_id);
   `;
 
   async function migrateFromLegacySqlite() {
@@ -140,6 +148,27 @@ if (config.databaseUrl) {
     },
     async updateOrderStatus(id, status) {
       await pool.query('UPDATE orders SET status = $1, updated_at = now() WHERE id = $2', [status, id]);
+    },
+    async getOrCreateVisitor(visitorId) {
+      if (!visitorId) return null;
+      const r = await pool.query('SELECT * FROM visitors WHERE visitor_id = $1', [visitorId]);
+      if (r.rows.length) return r.rows[0];
+      const ins = await pool.query(
+        `INSERT INTO visitors (visitor_id) VALUES ($1) RETURNING *`,
+        [visitorId]
+      );
+      return ins.rows[0];
+    },
+    async updateVisitorName(visitorId, name) {
+      await pool.query('UPDATE visitors SET name = $1, updated_at = now() WHERE visitor_id = $2', [name, visitorId]);
+    },
+    async getVisitorById(visitorId) {
+      const r = await pool.query('SELECT * FROM visitors WHERE visitor_id = $1', [visitorId]);
+      return r.rows[0] || null;
+    },
+    async getAllVisitors() {
+      const r = await pool.query('SELECT * FROM visitors ORDER BY created_at DESC');
+      return r.rows;
     }
   };
   console.log('[db] using PostgreSQL (external, persistent)');
@@ -180,6 +209,14 @@ if (config.databaseUrl) {
       password_hash TEXT NOT NULL,
       salt          TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS visitors (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      name          TEXT NOT NULL DEFAULT 'زائر',
+      visitor_id    TEXT UNIQUE NOT NULL,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at    TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_visitors_visitor_id ON visitors(visitor_id);
   `);
 
   impl = {
@@ -223,47 +260,22 @@ if (config.databaseUrl) {
         .run(status, id);
       require('./backup').schedule();
     },
-    async enterDailyDraw({ name, email, discord }) {
-      const today = new Date().toISOString().split('T')[0];
-      const stmt = db.prepare(`
-        INSERT INTO daily_draw_entries (user_name, user_email, user_discord, draw_date)
-        VALUES (?, ?, ?, ?)
-        ON CONFLICT(user_email, draw_date) DO NOTHING
-      `);
-      const res = stmt.run(name, email, discord, today);
-      return { success: res.changes > 0 };
+    async getOrCreateVisitor(visitorId) {
+      if (!visitorId) return null;
+      const row = db.prepare('SELECT * FROM visitors WHERE visitor_id = ?').get(visitorId);
+      if (row) return row;
+      db.prepare('INSERT INTO visitors (visitor_id) VALUES (?)').run(visitorId);
+      return db.prepare('SELECT * FROM visitors WHERE visitor_id = ?').get(visitorId);
     },
-    async getDailyDrawStatus(email) {
-      if (!email) return { entered: false };
-      const today = new Date().toISOString().split('T')[0];
-      const row = db.prepare('SELECT 1 FROM daily_draw_entries WHERE user_email = ? AND draw_date = ?').get(email, today);
-      return { entered: !!row };
+    async updateVisitorName(visitorId, name) {
+      db.prepare("UPDATE visitors SET name = ?, updated_at = datetime('now') WHERE visitor_id = ?")
+        .run(name, visitorId);
     },
-    async pickDailyDrawWinner() {
-      const today = new Date().toISOString().split('T')[0];
-      const entries = db.prepare('SELECT * FROM daily_draw_entries WHERE draw_date = ?').all(today);
-      if (!entries.length) return null;
-      const winner = entries[Math.floor(Math.random() * entries.length)];
-      db.prepare(`
-        INSERT INTO daily_draw_winners (draw_date, winner_name, winner_email, winner_discord, prize)
-        VALUES (?, ?, ?, ?, ?)
-        ON CONFLICT(draw_date) DO UPDATE SET
-          winner_name = excluded.winner_name,
-          winner_email = excluded.winner_email,
-          winner_discord = excluded.winner_discord,
-          prize = excluded.prize
-      `).run(today, winner.user_name, winner.user_email, winner.user_discord, 'Steam Game / Account');
-      return winner;
+    async getVisitorById(visitorId) {
+      return db.prepare('SELECT * FROM visitors WHERE visitor_id = ?').get(visitorId) || null;
     },
-    async getTodayWinner() {
-      const today = new Date().toISOString().split('T')[0];
-      return db.prepare('SELECT * FROM daily_draw_winners WHERE draw_date = ?').get(today) || null;
-    },
-    async getDrawStats() {
-      const today = new Date().toISOString().split('T')[0];
-      const todayEntries = db.prepare('SELECT COUNT(*) as c FROM daily_draw_entries WHERE draw_date = ?').get(today).c;
-      const totalWinners = db.prepare('SELECT COUNT(*) as c FROM daily_draw_winners').get().c;
-      return { todayEntries, totalWinners };
+    async getAllVisitors() {
+      return db.prepare('SELECT * FROM visitors ORDER BY created_at DESC').all();
     }
   };
   console.log('[db] using SQLite (local)');
