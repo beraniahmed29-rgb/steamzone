@@ -701,39 +701,6 @@ body::after {
   50% { transform: translateY(-14px) rotate(6deg); }
 }
 
-/* ===== Ad Containers (Adsterra Banners) ===== */
-.ad-container {
-  margin: 24px auto;
-  min-height: 90px;
-  max-width: 760px;
-  width: min(760px, 94%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  padding: 10px;
-}
-.ad-container iframe {
-  max-width: 100%;
-  border: 0;
-  display: block;
-  margin: 0 auto;
-}
-.ad-top { margin: 32px auto; }
-.ad-bottom { margin: 40px auto 24px; }
-.ad-product { margin: 24px auto 16px; }
-
-@media (max-width: 768px) {
-  .ad-container { min-height: 80px; margin: 16px 0; }
-  .ad-top { margin: 24px 0; }
-  .ad-bottom { margin: 24px 0 16px; }
-  .ad-product { margin: 16px 0; }
-  .ad-admin { margin: 12px 0 16px; }
-}
-
 /* Reduced motion: calm everything down */
 @media (prefers-reduced-motion: reduce) {
   .cursor-orb, .orb, #scroll-progress, .fx-burst, .ripple, .spark, .shooting-star { display: none; }
